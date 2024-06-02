@@ -35,7 +35,7 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
     fetchSeats();
   }, []); // Ensure that the dependencies array is correct
   
-  
+  console.log(selectedSeats)
 
   // Calculate total price based on selected seats
   useEffect(() => {

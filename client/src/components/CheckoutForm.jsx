@@ -26,6 +26,21 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
     const formattedInput = numericInput.replace(/(\d{2})(\d{0,2})/, '$1/$2');
     setExpiryDate(formattedInput);
   };
+  function generateRandomUserId() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const length = 8; // Adjust the length as needed
+    let userId = '';
+  
+    for (let i = 0; i < length; i++) {
+      userId += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+  
+    // Append current timestamp to ensure uniqueness
+    userId += Date.now();
+  
+    return userId;
+  }
+  
 
   const handleConfirmBooking = async () => {
     setLoading(true);
@@ -44,19 +59,20 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
       errors.cvv = 'CVV must be a 3-digit number.';
     }
 
-    if (Object.keys(errors).length === 0) {
-      try {
-        const response = await axios.post('http://localhost:3000/api/confirmBooking', {
-          passengerDetails,
-          flight,
-          paymentDetails: {
-            cardNumber,
-            expiryDate,
-            cvv
-          },
-          selectedSeats, // Include selectedSeats in the request payload
-          userId: 'user123'
-        });
+      if (Object.keys(errors).length === 0) {
+        const userId = generateRandomUserId();
+        try {
+            const response = await axios.post('http://localhost:3000/api/confirmBooking', {
+              passengerDetails,
+              flight,
+              paymentDetails: {
+                cardNumber,
+                expiryDate,
+                cvv
+              },
+              selectedSeats, 
+              userId
+            });
 
         setTimeout(() => {
           setLoading(false);
