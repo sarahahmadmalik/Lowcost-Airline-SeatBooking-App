@@ -8,6 +8,8 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [currentFireExitSeat, setCurrentFireExitSeat] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [totalPrice, setTotalPrice] = useState(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
@@ -29,15 +31,29 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
     fetchSeats();
   }, []);
 
+  // Calculate total price based on selected seats
+  useEffect(() => {
+    let totalPrice = selectedSeats.reduce((acc, seatId) => {
+      const seat = seats.find(seat => seat.id === seatId);
+      return acc + (seat ? seat.price : 0);
+    }, 0);
+
+    // Apply discount if eligible
+    if (discountApplied) {
+      totalPrice *= 0.75; // Apply 25% discount
+    }
+
+    setTotalPrice(totalPrice);
+  }, [selectedSeats, seats, discountApplied]);
+
   const handleSeatClick = (seat) => {
     // Handle seat selection
-    if (seat.seatClass.toLowerCase() === flight.class.toLowerCase() && seat.status) {
+    if (seat.status && seat.seatClass.toLowerCase() === flight.class.toLowerCase()) {
       if (seat.isFireExit) {
         setCurrentFireExitSeat(seat);
         onOpen();
         return;
       }
-
       updateSelectedSeats(seat);
     }
   };
@@ -55,7 +71,6 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
   const handleFireExitConfirmation = (acceptResponsibility) => {
     // Deselect the current fire exit seat regardless of responsibility acceptance
     updateSelectedSeats(currentFireExitSeat);
-    
     setCurrentFireExitSeat(null);
     onClose();
   };
@@ -65,7 +80,7 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
       alert('Please select at least one seat.');
       return;
     }
-    nextStep({ selectedSeats });
+    nextStep({ selectedSeats, totalPrice });
   };
 
   const groupSeatsByClass = () => {
