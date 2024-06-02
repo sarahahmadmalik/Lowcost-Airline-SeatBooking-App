@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Box, Button, Text, Stack, VStack, Divider, Grid, GridItem, Spinner, Heading, useToast, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton 
+  Box, Button, Text, Stack, VStack, Divider, Grid, GridItem, Spinner, Heading, useToast, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, AlertDialog, AlertDialogOverlay, AlertDialogContent, AlertDialogHeader, AlertDialogBody, AlertDialogFooter, AlertDialogCloseButton
 } from '@chakra-ui/react';
 
-const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
+const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, selectedSeats, setSelectedSeats }) => {
   const [seats, setSeats] = useState([]);
-  const [selectedSeats, setSelectedSeats] = useState([]);
   const [currentFireExitSeat, setCurrentFireExitSeat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [discountApplied, setDiscountApplied] = useState(false);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const [discountedPassengerIds, setDiscountedPassengerIds] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(flight.price);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  // console.log(seats)
 
   useEffect(() => {
     // Fetch seats from the server
@@ -23,20 +25,24 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
         setSeats(data);
       } catch (error) {
         console.error("Error fetching seats:", error);
+        // Handle error state here
       } finally {
         setLoading(false);
       }
     };
-
+  
+    console.log("Fetching seats...");
     fetchSeats();
-  }, []);
+  }, []); // Ensure that the dependencies array is correct
+  
+  
 
   // Calculate total price based on selected seats
   useEffect(() => {
     let totalPrice = selectedSeats.reduce((acc, seatId) => {
       const seat = seats.find(seat => seat.id === seatId);
-      return acc + (seat ? seat.price : 0);
-    }, 0);
+      return acc + (seat ? flight.price : 0);
+    }, flight.price);
 
     // Apply discount if eligible
     if (discountApplied) {
@@ -49,14 +55,19 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
   const handleSeatClick = (seat) => {
     // Handle seat selection
     if (seat.status && seat.seatClass.toLowerCase() === flight.class.toLowerCase()) {
-      if (seat.isFireExit) {
-        setCurrentFireExitSeat(seat);
-        onOpen();
-        return;
+      if (selectedSeats.length < 6 || selectedSeats.includes(seat.id)) {
+        if (seat.isFireExit) {
+          setCurrentFireExitSeat(seat);
+          onOpen();
+          return;
+        }
+        updateSelectedSeats(seat);
+      } else {
+        setIsAlertOpen(true);
       }
-      updateSelectedSeats(seat);
     }
   };
+  
 
   const updateSelectedSeats = (seat) => {
     setSelectedSeats((prevSelected) => {
@@ -69,18 +80,24 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
   };
 
   const handleFireExitConfirmation = (acceptResponsibility) => {
-    // Deselect the current fire exit seat regardless of responsibility acceptance
-    updateSelectedSeats(currentFireExitSeat);
+    if (acceptResponsibility) {
+      // If the user accepts responsibility, update selected seats
+      updateSelectedSeats(currentFireExitSeat);
+    } else {
+      // If the user declines responsibility, deselect the current fire exit seat
+      setSelectedSeats((prevSelected) => prevSelected.filter((s) => s !== currentFireExitSeat.id));
+    }
     setCurrentFireExitSeat(null);
     onClose();
   };
+  
 
   const handleConfirmBooking = () => {
     if (selectedSeats.length === 0) {
       alert('Please select at least one seat.');
       return;
     }
-    nextStep({ selectedSeats, totalPrice });
+    nextStep({ selectedSeats, discountApplied, discountedPassengerIds, totalPrice });
   };
 
   const groupSeatsByClass = () => {
@@ -108,14 +125,38 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
 
   return (
     <Box bg="white" p={8} shadow="md" borderRadius="md">
-      <Stack spacing={4}>
+      <Stack spacing={4} >
         <Text fontSize="lg" fontWeight="bold">Flight Details</Text>
-        <VStack align="start">
-          <Text>Flight Number: {flight.flightNumber}</Text>
-          <Text>Airline: {flight.airline}</Text>
-          <Text>Price: ${flight.price}</Text>
-          <Text>Class: {flight.class}</Text>
-        </VStack>
+        <Text fontSize="lg" fontWeight="bold">Flight Details</Text>
+<VStack align="start">
+  <Text>Flight Number: {flight.flightNumber}</Text>
+  <Text>Airline: {flight.airline}</Text>
+  <Text>Price per Seat: ${flight.price}</Text>
+  <Text>Class: {flight.class}</Text>
+  {/* Display discount information */}
+  {discountApplied && (
+    <Text color="green.500">Discount Applied: 25%</Text>
+  )}
+  {/* Display selected seats as badges */}
+  <Text fontSize="lg" fontWeight="bold">Selected Seats</Text>
+  <Stack direction="row" flexWrap="wrap">
+    {selectedSeats.map((seatId) => {
+      const seat = seats.find(seat => seat.id === seatId);
+      return (
+        <Box key={seatId} bg="blue.500" color="white" p={2} borderRadius="md" m={1}>
+          {seat.seatNumber}
+        </Box>
+      );
+    })}
+  </Stack>
+  <Text fontSize="lg" fontWeight="bold">
+    Total Price: <span style={{ color: 'blue' }}>${totalPrice.toFixed(2)}</span>
+    {discountApplied && (
+      <span style={{ color: 'green', marginLeft: '10px' }}>(Discount Applied: 25%)</span>
+    )}
+  </Text>
+</VStack>
+
 
         <Divider />
 
@@ -151,7 +192,7 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
                     alignItems="center"
                     justifyContent="center"
                     borderRadius="md"
-                    cursor={seat.status && seat.seatClass.toLowerCase() === flight.class.toLowerCase() ? 'pointer' : 'not-allowed'}
+                    cursor={seat.status                    && seat.seatClass.toLowerCase() === flight.class.toLowerCase() ? 'pointer' : 'not-allowed'}
                     onClick={() => handleSeatClick(seat)}
                   >
                     {seat.seatNumber}
@@ -177,7 +218,7 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
             <Text>You have selected a fire exit seat. Do you accept responsibility for assisting in case of an emergency?</Text>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="red" mr={3} onClick={() => handleFireExitConfirmation(false)}>
+            <Button colorScheme="red" mr={3} onClick={()=> handleFireExitConfirmation(false)}>
               No
             </Button>
             <Button colorScheme="green" onClick={() => handleFireExitConfirmation(true)}>
@@ -186,6 +227,35 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep }) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <AlertDialog
+        isOpen={isAlertOpen}
+        leastDestructiveRef={undefined}
+        onClose={() => setIsAlertOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Booking Constraint
+            </AlertDialogHeader>
+            <AlertDialogCloseButton />
+            <AlertDialogBody>
+              You can only book a maximum of 6 seats in a single transaction. Would you like to proceed with booking the first 6 seats?
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button onClick={() => setIsAlertOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="teal" ml={3} onClick={() => {
+                setIsAlertOpen(false);
+                nextStep({ selectedSeats: selectedSeats.slice(0, 6), discountApplied, discountedPassengerIds, totalPrice });
+              }}>
+                Proceed
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 };

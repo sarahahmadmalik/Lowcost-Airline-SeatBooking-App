@@ -4,7 +4,7 @@ import { ChevronRightIcon } from '@chakra-ui/icons';
 import { useLocation } from 'react-router-dom';
 import PassengerInfoForm from '../components/PassengerInfoForm';
 import ConfirmationPage from '../components/ConfirmationPage';
-import CheckoutForm from '../components/CheckoutForm'; // Import the CheckoutForm component
+import CheckoutForm from '../components/CheckoutForm';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 
@@ -12,6 +12,7 @@ const Booking = () => {
   const location = useLocation();
   const [step, setStep] = useState(1);
   const [passengerDetails, setPassengerDetails] = useState([]);
+  const [selectedSeats, setSelectedSeats] = useState([]); 
   const flight = location.state.flight;
 
   const nextStep = () => setStep(prevStep => prevStep + 1);
@@ -28,7 +29,7 @@ const Booking = () => {
           <Text fontSize={20} mt={2} mb={4} textAlign="center" color="gray.600">
             Please Fill in the Details
           </Text>
-        ) : step === 2 ? ( // Update the step condition to include the checkout step
+        ) : step === 2 ? (
           <Text fontSize={20} mt={2} mb={4} textAlign="center" color="gray.600">
             Confirm Your Booking
           </Text>
@@ -46,7 +47,7 @@ const Booking = () => {
             <BreadcrumbItem isCurrentPage={step === 2}>
               <BreadcrumbLink color={step === 2 ? "blue.500" : "gray.500"}>Confirmation</BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbItem isCurrentPage={step === 3}> {/* Add a new breadcrumb for the checkout step */}
+            <BreadcrumbItem isCurrentPage={step === 3}>
               <BreadcrumbLink color={step === 3 ? "blue.500" : "gray.500"}>Checkout</BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
@@ -65,16 +66,20 @@ const Booking = () => {
           <ConfirmationPage
             passengerDetails={passengerDetails}
             flight={flight}
-                      prevStep={prevStep}
-                      nextStep={nextStep}
+            selectedSeats={selectedSeats} // Pass selectedSeats as prop
+            setSelectedSeats={setSelectedSeats} // Pass function to update selectedSeats
+            prevStep={prevStep}
+            nextStep={nextStep}
           />
         )}
 
-        {step === 3 && ( // Render the CheckoutForm when the step is the checkout step
+        {step === 3 && (
           <CheckoutForm
             passengerDetails={passengerDetails}
             flight={flight}
             prevStep={prevStep}
+            selectedSeats={selectedSeats} // Pass selectedSeats as prop
+            setSelectedSeats={setSelectedSeats} // Pass function to update selectedSeats
           />
         )}
       </Box>

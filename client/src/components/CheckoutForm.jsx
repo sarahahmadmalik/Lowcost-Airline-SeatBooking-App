@@ -5,7 +5,7 @@ import {
 } from '@chakra-ui/react';
 import axios from 'axios';
 
-const CheckoutForm = ({ passengerDetails, flight, prevStep }) => {
+const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSelectedSeats }) => {
   const [cardNumber, setCardNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
@@ -54,6 +54,7 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep }) => {
             expiryDate,
             cvv
           },
+          selectedSeats, // Include selectedSeats in the request payload
           userId: 'user123'
         });
 
