@@ -1,12 +1,22 @@
 import express from 'express';
 import cors from 'cors';
 import BookingSystem from './BookingSystem.js';
+import ConfirmBooking from './routes/ConfirmBooking.js'
+import dotenv from 'dotenv';
+import connectDB from './database/db.js';
 
 const app = express();
 const bookingSystem = new BookingSystem();
 
+dotenv.config();
 app.use(cors({ origin: 'http://localhost:5173' })); // Allow requests from your client
 app.use(express.json());
+
+const PORT = process.env.PORT || 3000;
+
+connectDB();
+
+app.use("/api/", ConfirmBooking);
 
 app.get('/api/seats', (req, res) => {
     res.json(bookingSystem.seats);
@@ -46,10 +56,11 @@ app.get('/api/seats', (req, res) => {
 
 
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
-});
 
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+  
 // Periodic job to release expired seat locks
 setInterval(() => {
   bookingSystem.releaseExpiredLocks();

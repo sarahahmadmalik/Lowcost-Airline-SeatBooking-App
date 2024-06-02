@@ -71,8 +71,8 @@ class Seat {
       return seats;
     }
   
-    findSeat(seatNumber) {
-      return this.seats.find(seat => seat.seatNumber === seatNumber);
+    findSeat(seat_) {
+      return this.seats.find(seat => seat.id === seat_);
     }
   
     findAvailableSeats(seatClass, count) {
@@ -94,10 +94,13 @@ class Seat {
       this.seats.forEach(seat => seat.releaseSeat());
     }
   
-    bookSeats(seatNumbers, userId) {
-      for (let seatNumber of seatNumbers) {
-        const seat = this.findSeat(seatNumber);
-        if (!seat || !seat.bookSeat(userId)) {
+      bookSeats(seats, userId) {
+      
+      for (let seatNumber of seats) {
+          const seat = this.findSeat(seatNumber);
+        //   console.log(seat)
+          if (!seat) {
+            // console.log("false")
           return false; // Booking failed for at least one seat
         }
       }
