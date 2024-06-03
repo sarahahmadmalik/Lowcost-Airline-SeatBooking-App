@@ -3,6 +3,7 @@ import {
   Box, Button, FormControl, FormLabel, Input, Stack, Heading, Text, Flex, Spinner,
   AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader, AlertDialogContent, AlertDialogOverlay, useDisclosure
 } from '@chakra-ui/react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSelectedSeats }) => {
@@ -19,6 +20,7 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
   const [isError, setIsError] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = useRef();
+  const navigate = useNavigate();
 
   const handleExpiryDateChange = (e) => {
     const input = e.target.value;
@@ -26,6 +28,7 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
     const formattedInput = numericInput.replace(/(\d{2})(\d{0,2})/, '$1/$2');
     setExpiryDate(formattedInput);
   };
+
   function generateRandomUserId() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const length = 8; // Adjust the length as needed
@@ -59,20 +62,20 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
       errors.cvv = 'CVV must be a 3-digit number.';
     }
 
-      if (Object.keys(errors).length === 0) {
-        const userId = generateRandomUserId();
-        try {
-            const response = await axios.post('http://localhost:3000/api/confirmBooking', {
-              passengerDetails,
-              flight,
-              paymentDetails: {
-                cardNumber,
-                expiryDate,
-                cvv
-              },
-              selectedSeats, 
-              userId
-            });
+    if (Object.keys(errors).length === 0) {
+      const userId = generateRandomUserId();
+      try {
+        const response = await axios.post('http://localhost:3000/api/confirmBooking', {
+          passengerDetails,
+          flight,
+          paymentDetails: {
+            cardNumber,
+            expiryDate,
+            cvv
+          },
+          selectedSeats, 
+          userId
+        });
 
         setTimeout(() => {
           setLoading(false);
@@ -94,6 +97,13 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
     } else {
       setLoading(false);
       setFormErrors(errors);
+    }
+  };
+
+  const handleClose = () => {
+    onClose();
+    if (!isError) {
+      navigate('/booked-flights'); // Redirect to booked flights page if booking was successful
     }
   };
 
@@ -132,7 +142,7 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}
-        onClose={onClose}
+        onClose={handleClose} // Use handleClose to manage the redirection
       >
         <AlertDialogOverlay>
           <AlertDialogContent>
@@ -141,7 +151,7 @@ const CheckoutForm = ({ passengerDetails, flight, prevStep, selectedSeats, setSe
               <Text>{message}</Text>
             </AlertDialogBody>
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose}>
+              <Button ref={cancelRef} onClick={handleClose}>
                 Close
               </Button>
             </AlertDialogFooter>

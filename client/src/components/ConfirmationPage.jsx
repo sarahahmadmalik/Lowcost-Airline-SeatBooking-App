@@ -8,12 +8,10 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
   const [currentFireExitSeat, setCurrentFireExitSeat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [discountApplied, setDiscountApplied] = useState(false);
-  const [discountedPassengerIds, setDiscountedPassengerIds] = useState([]);
   const [totalPrice, setTotalPrice] = useState(flight.price);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  // console.log(seats)
 
   useEffect(() => {
     // Fetch seats from the server
@@ -30,14 +28,18 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
         setLoading(false);
       }
     };
-  
+
     console.log("Fetching seats...");
     fetchSeats();
-  }, []); // Ensure that the dependencies array is correct
-  
-  console.log(selectedSeats)
+  }, []);
 
-  // Calculate total price based on selected seats
+  // Calculate discount based on passenger ages
+  useEffect(() => {
+    const applyDiscount = passengerDetails.some(passenger => passenger.age >= 15);
+    setDiscountApplied(applyDiscount);
+  }, [passengerDetails]);
+
+  // Calculate total price based on selected seats and discount
   useEffect(() => {
     let totalPrice = selectedSeats.reduce((acc, seatId) => {
       const seat = seats.find(seat => seat.id === seatId);
@@ -53,7 +55,6 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
   }, [selectedSeats, seats, discountApplied]);
 
   const handleSeatClick = (seat) => {
-    // Handle seat selection
     if (seat.status && seat.seatClass.toLowerCase() === flight.class.toLowerCase()) {
       if (selectedSeats.length < 6 || selectedSeats.includes(seat.id)) {
         if (seat.isFireExit) {
@@ -67,7 +68,6 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
       }
     }
   };
-  
 
   const updateSelectedSeats = (seat) => {
     setSelectedSeats((prevSelected) => {
@@ -81,27 +81,24 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
 
   const handleFireExitConfirmation = (acceptResponsibility) => {
     if (acceptResponsibility) {
-      // If the user accepts responsibility, update selected seats
       updateSelectedSeats(currentFireExitSeat);
     } else {
-      // If the user declines responsibility, deselect the current fire exit seat
       setSelectedSeats((prevSelected) => prevSelected.filter((s) => s !== currentFireExitSeat.id));
     }
     setCurrentFireExitSeat(null);
     onClose();
   };
-  
 
   const handleConfirmBooking = () => {
     if (selectedSeats.length === 0) {
       alert('Please select at least one seat.');
       return;
     }
-    nextStep({ selectedSeats, discountApplied, discountedPassengerIds, totalPrice });
+    nextStep({ selectedSeats, discountApplied, totalPrice });
   };
 
   const groupSeatsByClass = () => {
-    return seats.reduce((acc, seat) => {
+    return seats?.reduce((acc, seat) => {
       acc[seat.seatClass] = acc[seat.seatClass] || [];
       acc[seat.seatClass].push(seat);
       return acc;
@@ -125,38 +122,34 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
 
   return (
     <Box bg="white" p={8} shadow="md" borderRadius="md">
-      <Stack spacing={4} >
+      <Stack spacing={4}>
         <Text fontSize="lg" fontWeight="bold">Flight Details</Text>
-        <Text fontSize="lg" fontWeight="bold">Flight Details</Text>
-<VStack align="start">
-  <Text>Flight Number: {flight.flightNumber}</Text>
-  <Text>Airline: {flight.airline}</Text>
-  <Text>Price per Seat: ${flight.price}</Text>
-  <Text>Class: {flight.class}</Text>
-  {/* Display discount information */}
-  {discountApplied && (
-    <Text color="green.500">Discount Applied: 25%</Text>
-  )}
-  {/* Display selected seats as badges */}
-  <Text fontSize="lg" fontWeight="bold">Selected Seats</Text>
-  <Stack direction="row" flexWrap="wrap">
-    {selectedSeats.map((seatId) => {
-      const seat = seats.find(seat => seat.id === seatId);
-      return (
-        <Box key={seatId} bg="blue.500" color="white" p={2} borderRadius="md" m={1}>
-          {seat.seatNumber}
-        </Box>
-      );
-    })}
-  </Stack>
-  <Text fontSize="lg" fontWeight="bold">
-    Total Price: <span style={{ color: 'blue' }}>${totalPrice.toFixed(2)}</span>
-    {discountApplied && (
-      <span style={{ color: 'green', marginLeft: '10px' }}>(Discount Applied: 25%)</span>
-    )}
-  </Text>
-</VStack>
-
+        <VStack align="start">
+          <Text>Flight Number: {flight.flightNumber}</Text>
+          <Text>Airline: {flight.airline}</Text>
+          <Text>Price per Seat: ${flight.price}</Text>
+          <Text>Class: {flight.class}</Text>
+          {discountApplied && (
+            <Text color="green.500">Discount Applied: 25%</Text>
+          )}
+          <Text fontSize="lg" fontWeight="bold">Selected Seats</Text>
+          <Stack direction="row" flexWrap="wrap">
+            {selectedSeats.map((seatId) => {
+              const seat = seats?.find(seat => seat.id === seatId);
+              return (
+                <Box key={seatId} bg="blue.500" color="white" p={2} borderRadius="md" m={1}>
+                  {seat?.seatNumber}
+                </Box>
+              );
+            })}
+          </Stack>
+          <Text fontSize="lg" fontWeight="bold">
+            Total Price: <span style={{ color: 'blue' }}>${totalPrice.toFixed(2)}</span>
+            {discountApplied && (
+              <span style={{ color: 'green', marginLeft: '10px' }}>(Discount Applied: 25%)</span>
+            )}
+          </Text>
+        </VStack>
 
         <Divider />
 
@@ -184,18 +177,18 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
               <Grid templateColumns="repeat(10, 1fr)" gap={2}>
                 {seats.map((seat) => (
                   <GridItem
-                    key={seat.id}
+                    key={seat?.id}
                     w="40px"
                     h="40px"
-                    bg={seat.status ? (selectedSeats.includes(seat.id) ? 'blue.500' : 'green.500') : 'gray.500'}
+                    bg={seat?.status ? (selectedSeats.includes(seat?.id) ? 'blue.500' : 'green.500') : 'gray.500'}
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                     borderRadius="md"
-                    cursor={seat.status                    && seat.seatClass.toLowerCase() === flight.class.toLowerCase() ? 'pointer' : 'not-allowed'}
+                    cursor={seat?.status && seat?.seatClass.toLowerCase() === flight.class.toLowerCase() ? 'pointer' : 'not-allowed'}
                     onClick={() => handleSeatClick(seat)}
                   >
-                    {seat.seatNumber}
+                    {seat?.seatNumber}
                   </GridItem>
                 ))}
               </Grid>
@@ -218,7 +211,7 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
             <Text>You have selected a fire exit seat. Do you accept responsibility for assisting in case of an emergency?</Text>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="red" mr={3} onClick={()=> handleFireExitConfirmation(false)}>
+            <Button colorScheme="red" mr={3} onClick={() => handleFireExitConfirmation(false)}>
               No
             </Button>
             <Button colorScheme="green" onClick={() => handleFireExitConfirmation(true)}>
@@ -248,7 +241,7 @@ const ConfirmationPage = ({ passengerDetails, flight, prevStep, nextStep, select
               </Button>
               <Button colorScheme="teal" ml={3} onClick={() => {
                 setIsAlertOpen(false);
-                nextStep({ selectedSeats: selectedSeats.slice(0, 6), discountApplied, discountedPassengerIds, totalPrice });
+                nextStep({ selectedSeats: selectedSeats.slice(0, 6), discountApplied, totalPrice });
               }}>
                 Proceed
               </Button>

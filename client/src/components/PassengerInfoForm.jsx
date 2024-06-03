@@ -23,7 +23,7 @@ const PassengerInfoForm = ({ passengerDetails, setPassengerDetails, nextStep, fl
       setFormErrors(errors);
       return;
     }
-
+  
     // Perform form validation
     if (!name.trim()) {
       errors.name = 'Please enter your name.';
@@ -76,11 +76,9 @@ const PassengerInfoForm = ({ passengerDetails, setPassengerDetails, nextStep, fl
       } else {
         setFormErrors(errors);
       }
-    }
-    else
+    } else {
       nextStep();
-
-   
+    }
   };
   
 
@@ -110,7 +108,7 @@ const PassengerInfoForm = ({ passengerDetails, setPassengerDetails, nextStep, fl
         <FormControl isInvalid={!!formErrors.limit}>
           <Text color="red.500">{formErrors.limit}</Text>
         </FormControl>
-        <Button colorScheme="blue" fontWeight={500} onClick={handleAddPassenger} disabled={passengerDetails.length >= flight.passengerCount}>Add Passenger</Button>
+        <Button colorScheme="blue" fontWeight={500} onClick={handleAddPassenger} disabled={passengerDetails.length >= flight.travellers}>Add Passenger</Button>
       </Stack>
 
       {passengerDetails.length > 0 && (
@@ -127,7 +125,7 @@ const PassengerInfoForm = ({ passengerDetails, setPassengerDetails, nextStep, fl
       )}
 
       <Box display="flex" justifyContent="flex-end">
-        <Button mt={8} colorScheme="teal" fontWeight={500} onClick={Next}   disabled={passengerDetails.length === 0 || Object.keys(formErrors).length > 0}>Next</Button>
+        <Button mt={8} colorScheme="teal" fontWeight={500} onClick={Next} disabled={passengerDetails.length === 0 || Object.keys(formErrors).length > 0}>Next</Button>
       </Box>
     </Box>
   );
