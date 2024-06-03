@@ -56,4 +56,15 @@ router.post('/confirmBooking', async (req, res) => {
   }
 });
 
+// GET route to fetch all bookings
+router.get('/bookings', async (req, res) => {
+    try {
+      const bookings = await Booking.find(); // Fetch all bookings from the database
+      res.status(200).json(bookings);
+    } catch (error) {
+      console.error('Error fetching bookings:', error.message);
+      res.status(500).json({ success: false, message: 'An error occurred while fetching bookings.' });
+    }
+  });
+
 export default router;

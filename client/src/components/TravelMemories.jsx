@@ -1,3 +1,4 @@
+import React from 'react';
 import { Box, Container, Heading, SimpleGrid, Stack, Text, Icon } from '@chakra-ui/react';
 import { FaCalendarCheck, FaClipboardList, FaPiggyBank } from 'react-icons/fa';
 import Slide from 'react-reveal/Slide';
